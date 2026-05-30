@@ -57,14 +57,14 @@ class NoteService:
                             None,
                             lambda: self.downloader.download_subtitles(video_url),
                         ),
-                        timeout=20,
+                        timeout=45,
                     )
                     if transcript and transcript.segments:
                         logger.info(f"获取字幕成功，共 {len(transcript.segments)} 段")
                     else:
                         logger.info("无平台字幕，将下载音频")
                 except asyncio.TimeoutError:
-                    logger.warning("字幕下载超时（20s），将直接下载音频")
+                    logger.warning("字幕下载超时（45s），将直接下载音频")
                     transcript = None
 
             # 2. 下载音频
