@@ -386,10 +386,7 @@ class BiliNotePlugin(Star):
                 except Exception as e:
                     logger.warning(f"发送视频信息失败: {e}")
             else:
-                try:
-                    await event.send_result("获取视频信息失败，请稍后重试")
-                except Exception:
-                    pass
+                await event.send(MessageChain().message("获取视频信息失败，请稍后重试"))
                 return
 
         # === 自动生成总结（如果开启）===
@@ -439,7 +436,6 @@ class BiliNotePlugin(Star):
 
     async def _do_summarize(self, event: AstrMessageEvent, url: str):
         """执行视频总结"""
-        # 确保 URL 完整
         if not url.startswith("http"):
             if re.match(r'^BV[0-9A-Za-z]{10}$', url):
                 url = f"https://www.bilibili.com/video/{url}"
@@ -448,16 +444,10 @@ class BiliNotePlugin(Star):
                 if bv_match:
                     url = f"https://www.bilibili.com/video/{bv_match.group(0)}"
                 else:
-                    try:
-                        await event.send_result("请提供有效的B站视频链接或BV号")
-                    except Exception:
-                        pass
+                    await event.send(MessageChain().message("请提供有效的B站视频链接或BV号"))
                     return
 
-        try:
-            await event.send_result("正在生成视频总结，请稍候...")
-        except Exception:
-            pass
+        await event.send(MessageChain().message("正在生成视频总结，请稍候..."))
 
         try:
             note = await asyncio.wait_for(
@@ -474,22 +464,15 @@ class BiliNotePlugin(Star):
             )
 
             if not note:
-                try:
-                    await event.send_result("总结生成失败，请稍后重试")
-                except Exception:
-                    pass
+                await event.send(MessageChain().message("总结生成失败，请稍后重试"))
                 return
 
             if note.startswith("无法获取"):
-                try:
-                    await event.send_result(f"❌ {note}")
-                except Exception:
-                    pass
+                await event.send(MessageChain().message(f"❌ {note}"))
                 return
 
             note = note.replace("*", "").replace("#", "").replace("`", "")
 
-            # 发送总结
             if len(note) > 2000:
                 chunks = []
                 remaining = note
@@ -505,28 +488,16 @@ class BiliNotePlugin(Star):
 
                 for i, chunk in enumerate(chunks):
                     label = f"📝 视频总结 ({i + 1}/{len(chunks)})\n\n" if i > 0 else "📝 视频总结\n\n"
-                    try:
-                        await event.send_result(label + chunk)
-                    except Exception:
-                        pass
+                    await event.send(MessageChain().message(label + chunk))
             else:
-                try:
-                    await event.send_result(f"📝 视频总结\n\n{note}")
-                except Exception:
-                    pass
+                await event.send(MessageChain().message(f"📝 视频总结\n\n{note}"))
 
         except asyncio.TimeoutError:
-            logger.error(f"总结超时 ({self.processing_timeout}s): {url}")
-            try:
-                await event.send_result(f"总结生成超时（{self.processing_timeout}秒），请尝试较短的视频或在配置中增加超时时间")
-            except Exception:
-                pass
+            logger.error(f"总结超时 ({self.cfg.get('processing_timeout', 300)}s): {url}")
+            await event.send(MessageChain().message(f"总结生成超时，请尝试较短的视频"))
         except Exception as e:
             logger.error(f"总结失败: {e}", exc_info=True)
-            try:
-                await event.send_result(f"总结生成失败: {str(e)[:200]}")
-            except Exception:
-                pass
+            await event.send(MessageChain().message(f"总结生成失败: {str(e)[:200]}"))
 
     # ==================== B站登录命令 ====================
 
