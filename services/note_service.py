@@ -48,26 +48,40 @@ class NoteService:
             audio_meta = None
             transcript = None
 
-            # 1. 尝试获取平台字幕
+            # 1. 尝试获取平台字幕（带超时，防止 yt-dlp 卡死）
             if prefer_subtitle:
                 logger.info(f"尝试获取平台字幕: {video_url}")
-                transcript = await asyncio.get_running_loop().run_in_executor(
-                    None,
-                    lambda: self.downloader.download_subtitles(video_url),
-                )
-                if transcript and transcript.segments:
-                    logger.info(f"获取字幕成功，共 {len(transcript.segments)} 段")
-                else:
-                    logger.info("无平台字幕，将下载音频")
+                try:
+                    transcript = await asyncio.wait_for(
+                        asyncio.get_running_loop().run_in_executor(
+                            None,
+                            lambda: self.downloader.download_subtitles(video_url),
+                        ),
+                        timeout=20,
+                    )
+                    if transcript and transcript.segments:
+                        logger.info(f"获取字幕成功，共 {len(transcript.segments)} 段")
+                    else:
+                        logger.info("无平台字幕，将下载音频")
+                except asyncio.TimeoutError:
+                    logger.warning("字幕下载超时（20s），将直接下载音频")
+                    transcript = None
 
             # 2. 下载音频
             if not transcript or not transcript.segments:
                 logger.info(f"开始下载音频: {video_url}")
-                audio_meta = await asyncio.get_running_loop().run_in_executor(
-                    None,
-                    lambda: self.downloader.download(video_url, quality=quality),
-                )
-                logger.info(f"音频下载完成: {audio_meta.title}")
+                try:
+                    audio_meta = await asyncio.wait_for(
+                        asyncio.get_running_loop().run_in_executor(
+                            None,
+                            lambda: self.downloader.download(video_url, quality=quality),
+                        ),
+                        timeout=120,
+                    )
+                    logger.info(f"音频下载完成: {audio_meta.title}")
+                except asyncio.TimeoutError:
+                    logger.error("音频下载超时（120s）")
+                    return "视频音频下载超时，请尝试较短的视频"
 
                 # 3. ASR 转写
                 if not transcript or not transcript.segments:
