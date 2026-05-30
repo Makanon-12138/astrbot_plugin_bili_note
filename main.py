@@ -353,47 +353,44 @@ class BiliNotePlugin(Star):
 
         # === 获取视频信息 ===
         video_info = await get_video_info(bvid, cookies=self._get_bili_cookies())
-        if not video_info:
-            try:
-                await event.send_result("获取视频信息失败，请稍后重试")
-            except Exception:
-                pass
-            return
 
-        # === 构建视频信息消息 ===
-        info_lines = []
-        if self.cfg.get("detect_show_uploader", True):
-            info_lines.append(f"UP主: {video_info.get('owner_name', '未知')}")
-        if self.cfg.get("detect_show_desc", True):
-            desc = video_info.get('desc', '')
-            if desc:
-                desc = desc[:100] + "..." if len(desc) > 100 else desc
-                info_lines.append(f"简介: {desc}")
-        if self.cfg.get("detect_show_stats", True):
-            info_lines.append(
-                f"播放: {video_info.get('view', 0)} | "
-                f"弹幕: {video_info.get('danmaku', 0)} | "
-                f"点赞: {video_info.get('like', 0)}"
-            )
-        info_lines.append(f"链接: https://www.bilibili.com/video/{bvid}")
+        # === 发送视频信息卡片（可配置开关）===
+        if self.cfg.get("detect_show_video_info", True):
+            if video_info:
+                info_lines = []
+                if self.cfg.get("detect_show_uploader", True):
+                    info_lines.append(f"UP主: {video_info.get('owner_name', '未知')}")
+                if self.cfg.get("detect_show_desc", True):
+                    desc = video_info.get('desc', '')
+                    if desc:
+                        desc = desc[:100] + "..." if len(desc) > 100 else desc
+                        info_lines.append(f"简介: {desc}")
+                if self.cfg.get("detect_show_stats", True):
+                    info_lines.append(
+                        f"播放: {video_info.get('view', 0)} | "
+                        f"弹幕: {video_info.get('danmaku', 0)} | "
+                        f"点赞: {video_info.get('like', 0)}"
+                    )
+                info_lines.append(f"链接: https://www.bilibili.com/video/{bvid}")
 
-        # 发送视频信息
-        chain = MessageChain()
-        title = video_info.get('title', 'B站视频')
-        chain.message(f"📺 {title}")
-
-        if info_lines:
-            chain.message("\n" + "\n".join(info_lines))
-
-        if self.cfg.get("detect_show_cover", True):
-            pic_url = video_info.get('pic', '')
-            if pic_url:
-                chain.url_image(pic_url)
-
-        try:
-            await event.send(chain)
-        except Exception as e:
-            logger.warning(f"发送视频信息失败: {e}")
+                chain = MessageChain()
+                chain.message("📺 " + video_info.get('title', 'B站视频'))
+                if info_lines:
+                    chain.message("\n" + "\n".join(info_lines))
+                if self.cfg.get("detect_show_cover", True):
+                    pic_url = video_info.get('pic', '')
+                    if pic_url:
+                        chain.url_image(pic_url)
+                try:
+                    await event.send(chain)
+                except Exception as e:
+                    logger.warning(f"发送视频信息失败: {e}")
+            else:
+                try:
+                    await event.send_result("获取视频信息失败，请稍后重试")
+                except Exception:
+                    pass
+                return
 
         # === 自动生成总结（如果开启）===
         if self.cfg.get("detect_auto_summary", True):

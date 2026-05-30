@@ -42,6 +42,12 @@
     "hint": "识别到B站链接时，是否显示播放量、弹幕、点赞等数据",
     "default": true
   },
+  "detect_show_video_info": {
+    "description": "识别推送：显示视频信息卡片",
+    "type": "bool",
+    "hint": "识别到B站链接时，是否先发送视频信息卡片（标题、封面、链接等）。关闭则只输出AI总结，无多余信息。",
+    "default": true
+  },
   "detect_auto_summary": {
     "description": "识别推送：自动生成总结",
     "type": "bool",
