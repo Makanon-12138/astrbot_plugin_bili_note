@@ -392,9 +392,12 @@ class BiliNotePlugin(Star):
                 await event.send(MessageChain().message("获取视频信息失败，请稍后重试"))
                 return
 
-        # === 自动生成总结（如果开启）===
-        if self.cfg.get("detect_auto_summary", True):
-            await self._do_summarize(event, f"https://www.bilibili.com/video/{bvid}")
+        # === 总结/观后感（至少开启一个才触发）===
+        need_summary = self.cfg.get("detect_auto_summary", True)
+        need_review = self.cfg.get("enable_review", False)
+        if need_summary or need_review:
+            await self._do_process(event, f"https://www.bilibili.com/video/{bvid}",
+                                   send_summary=need_summary, send_review=need_review)
 
     # ==================== BV 链接正则匹配 ====================
 
@@ -435,10 +438,12 @@ class BiliNotePlugin(Star):
             )
             return
 
-        await self._do_summarize(event, url)
+        await self._do_process(event, url, send_summary=True,
+                               send_review=self.cfg.get("enable_review", False))
 
-    async def _do_summarize(self, event: AstrMessageEvent, url: str):
-        """执行视频总结"""
+    async def _do_process(self, event: AstrMessageEvent, url: str,
+                          send_summary: bool = True, send_review: bool = False):
+        """统一的视频处理入口：下载/转写 → 可选总结 + 可选观后感"""
         if not url.startswith("http"):
             if re.match(r'^BV[0-9A-Za-z]{10}$', url):
                 url = f"https://www.bilibili.com/video/{url}"
@@ -451,8 +456,9 @@ class BiliNotePlugin(Star):
                     return
 
         max_input = self.cfg.get("max_input_chars", 8000)
-        logger.info(f"[Summary] 开始生成总结: {url}")
+        logger.info(f"[Process] 开始处理视频: {url} (总结={send_summary} 观后感={send_review})")
 
+        # 跑流水线（字幕/音频/ASR/LLM），必须执行才能缓存 segments 供观后感使用
         try:
             note = await asyncio.wait_for(
                 self.note_service.generate_note(
@@ -469,39 +475,41 @@ class BiliNotePlugin(Star):
                 timeout=self.cfg.get("processing_timeout", 300),
             )
 
-            if note and not note.startswith("无法获取"):
-                note = note.replace("*", "").replace("#", "").replace("`", "")
-
-            if len(note) > 2000:
-                chunks = []
-                remaining = note
-                while remaining:
-                    if len(remaining) <= 2000:
-                        chunks.append(remaining)
-                        break
-                    cut = remaining.rfind('\n', 0, 2000)
-                    if cut < 500:
-                        cut = 2000
-                    chunks.append(remaining[:cut])
-                    remaining = remaining[cut:].lstrip('\n')
-
-                for i, chunk in enumerate(chunks):
-                    label = f"📝 视频总结 ({i + 1}/{len(chunks)})\n\n" if i > 0 else "📝 视频总结\n\n"
-                    await event.send(MessageChain().message(label + chunk))
-            elif not note:
-                await event.send(MessageChain().message("总结生成失败，请稍后重试"))
-            else:
-                await event.send(MessageChain().message(f"❌ {note}"))
+            # 发送总结（按需）
+            if send_summary:
+                if note and not note.startswith("无法获取"):
+                    note = note.replace("*", "").replace("#", "").replace("`", "")
+                    if len(note) > 2000:
+                        chunks = []
+                        remaining = note
+                        while remaining:
+                            if len(remaining) <= 2000:
+                                chunks.append(remaining)
+                                break
+                            cut = remaining.rfind('\n', 0, 2000)
+                            if cut < 500:
+                                cut = 2000
+                            chunks.append(remaining[:cut])
+                            remaining = remaining[cut:].lstrip('\n')
+                        for i, chunk in enumerate(chunks):
+                            label = f"📝 视频总结 ({i + 1}/{len(chunks)})\n\n" if i > 0 else "📝 视频总结\n\n"
+                            await event.send(MessageChain().message(label + chunk))
+                    else:
+                        await event.send(MessageChain().message(f"📝 视频总结\n\n{note}"))
+                elif note:
+                    await event.send(MessageChain().message(f"❌ {note}"))
+                else:
+                    await event.send(MessageChain().message("总结生成失败，请稍后重试"))
 
         except asyncio.TimeoutError:
-            logger.error(f"总结超时: {url}")
-            await event.send(MessageChain().message("总结生成超时，请尝试较短的视频"))
+            logger.error(f"处理超时: {url}")
+            await event.send(MessageChain().message("处理超时，请尝试较短的视频"))
         except Exception as e:
-            logger.error(f"总结失败: {e}", exc_info=True)
-            await event.send(MessageChain().message(f"总结生成失败: {str(e)[:200]}"))
+            logger.error(f"处理失败: {e}", exc_info=True)
+            await event.send(MessageChain().message(f"处理失败: {str(e)[:200]}"))
 
-        # 观后感/锐评（使用 AstrBot 内置人设）
-        if self.cfg.get("enable_review", False):
+        # 观后感（使用缓存的 segments，独立于总结）
+        if send_review:
             try:
                 review = await self.note_service.generate_review(
                     llm_ask_func=self._ask_llm,
