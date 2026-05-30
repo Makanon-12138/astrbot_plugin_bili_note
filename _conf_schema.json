@@ -1,0 +1,138 @@
+{
+  "sessdata": {
+    "description": "B站 SESSDATA Cookie",
+    "type": "string",
+    "hint": "B站 cookie 中的 SESSDATA 字段。也可以通过 /bili_login 扫码登录自动获取。获取方法请查看 README。",
+    "default": "",
+    "invisible": true
+  },
+  "proxy": {
+    "description": "代理地址",
+    "type": "string",
+    "hint": "Bilibili API 请求代理地址。示例: http://127.0.0.1:7890，留空则直连。",
+    "default": ""
+  },
+  "enable_miniapp_detect": {
+    "description": "自动识别B站链接",
+    "type": "bool",
+    "hint": "开启后自动识别QQ群中的B站视频小程序/链接/短链/BV号，无需手动输入命令。",
+    "default": true
+  },
+  "detect_show_cover": {
+    "description": "识别推送：显示封面图",
+    "type": "bool",
+    "hint": "识别到B站链接时，是否在推送中包含视频封面图片",
+    "default": true
+  },
+  "detect_show_uploader": {
+    "description": "识别推送：显示UP主名",
+    "type": "bool",
+    "hint": "识别到B站链接时，是否显示UP主名称",
+    "default": true
+  },
+  "detect_show_desc": {
+    "description": "识别推送：显示简介",
+    "type": "bool",
+    "hint": "识别到B站链接时，是否显示视频简介",
+    "default": true
+  },
+  "detect_show_stats": {
+    "description": "识别推送：显示播放数据",
+    "type": "bool",
+    "hint": "识别到B站链接时，是否显示播放量、弹幕、点赞等数据",
+    "default": true
+  },
+  "detect_auto_summary": {
+    "description": "识别推送：自动生成总结",
+    "type": "bool",
+    "hint": "识别到B站链接时，是否自动生成视频AI总结。关闭后识别到链接仅返回视频信息，需手动 /总结 触发。",
+    "default": true
+  },
+  "llm_provider": {
+    "description": "LLM 提供者",
+    "type": "string",
+    "default": "astrbot",
+    "options": ["astrbot", "openai_compatible"],
+    "hint": "astrbot(使用AstrBot内置LLM) / openai_compatible(使用自定义OpenAI兼容API)"
+  },
+  "llm_api_base": {
+    "description": "OpenAI兼容API地址",
+    "type": "string",
+    "default": "",
+    "hint": "当llm_provider为openai_compatible时填写，例如 https://api.openai.com/v1"
+  },
+  "llm_api_key": {
+    "description": "OpenAI兼容API密钥",
+    "type": "string",
+    "default": "",
+    "hint": "当llm_provider为openai_compatible时填写API Key",
+    "invisible": true
+  },
+  "llm_model": {
+    "description": "OpenAI兼容API模型名称",
+    "type": "string",
+    "default": "gpt-4o-mini",
+    "hint": "当llm_provider为openai_compatible时填写模型名，如 gpt-4o-mini, deepseek-chat 等"
+  },
+  "note_style": {
+    "description": "总结风格",
+    "type": "string",
+    "default": "professional",
+    "options": ["concise", "detailed", "professional"],
+    "hint": "concise(简洁 — 仅核心要点) / detailed(详细 — 完整记录) / professional(专业 — 结构化分析)"
+  },
+  "enable_summary_block": {
+    "description": "启用AI总结块",
+    "type": "bool",
+    "default": true,
+    "hint": "是否在总结末尾加入AI生成的总结概述"
+  },
+  "download_quality": {
+    "description": "音频下载质量",
+    "type": "string",
+    "default": "fast",
+    "options": ["fast", "medium", "slow"],
+    "hint": "fast(快速32kbps) / medium(中等64kbps) / slow(高质128kbps)"
+  },
+  "prefer_subtitle": {
+    "description": "优先使用字幕",
+    "type": "bool",
+    "default": true,
+    "hint": "视频有字幕时优先获取字幕内容进行总结，没有字幕再下载音频转写"
+  },
+  "processing_timeout": {
+    "description": "处理超时时间(秒)",
+    "type": "int",
+    "default": 300,
+    "min": 60,
+    "max": 600,
+    "hint": "单个视频总结生成的最大超时时间"
+  },
+  "max_note_length": {
+    "description": "总结最大字符数",
+    "type": "int",
+    "default": 3000,
+    "min": 500,
+    "max": 10000,
+    "hint": "总结最大字符数，超过将自动截断"
+  },
+  "output_image": {
+    "description": "总结以图片形式发送",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后总结将渲染为图片发送（需要 wkhtmltopdf），关闭则发送纯文本"
+  },
+  "access_mode": {
+    "description": "群聊访问控制模式",
+    "type": "string",
+    "default": "blacklist",
+    "options": ["blacklist", "whitelist"],
+    "hint": "blacklist(黑名单模式) / whitelist(白名单模式)"
+  },
+  "group_list": {
+    "description": "群号列表(逗号分隔)",
+    "type": "string",
+    "default": "",
+    "hint": "黑名单/白名单的群号列表，用英文逗号分隔"
+  }
+}

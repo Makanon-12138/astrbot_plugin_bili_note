@@ -1,0 +1,9 @@
+name: astrbot_plugin_bili_note
+desc: 自动识别QQ聊天中的B站视频小程序/链接，提取内容并生成AI结构化总结。支持扫码登录、零命令自动检测、手动总结。
+help: 输入 /总结 或直接分享B站视频链接/小程序即可生成视频总结
+version: v1.0.0
+author: Makanon-12138
+repo: https://github.com/Makanon-12138/astrbot_plugin_bili_note
+astrbot_version: ">=4.5.0"
+support_platforms:
+  - aiocqhttp
