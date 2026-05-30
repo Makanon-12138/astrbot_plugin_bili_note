@@ -31,6 +31,24 @@ class BilibiliDownloader(Downloader):
         with open(self.cookies_file, 'w', encoding='utf-8') as f:
             f.write("\n".join(lines) + "\n")
 
+    @staticmethod
+    def _find_ffmpeg() -> str:
+        """自动查找 ffmpeg 路径，避免依赖系统 PATH"""
+        candidates = [
+            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-*-essentials_build\bin"),
+            os.path.expandvars(r"%PROGRAMFILES%\ffmpeg\bin"),
+            os.path.expandvars(r"%PROGRAMFILES(X86)%\ffmpeg\bin"),
+            r"C:\ffmpeg\bin",
+        ]
+        import glob as _glob
+        for pattern in candidates:
+            for match in _glob.glob(pattern) if '*' in pattern else [pattern]:
+                ffmpeg_exe = os.path.join(match, "ffmpeg.exe")
+                if os.path.exists(ffmpeg_exe):
+                    logger.info(f"找到 ffmpeg: {match}")
+                    return match
+        return None
+
     def download(
         self, video_url: str, output_dir: Optional[str] = None, quality: str = "fast",
     ) -> AudioDownloadResult:
@@ -50,6 +68,7 @@ class BilibiliDownloader(Downloader):
             'noplaylist': True,
             'quiet': True,
             'no_warnings': True,
+            'ffmpeg_location': self._find_ffmpeg(),
         }
         if self.cookies_file and os.path.exists(self.cookies_file):
             ydl_opts['cookiefile'] = self.cookies_file
