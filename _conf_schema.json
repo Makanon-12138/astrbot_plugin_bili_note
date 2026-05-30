@@ -3,8 +3,7 @@
     "description": "B站 SESSDATA Cookie",
     "type": "string",
     "hint": "B站 cookie 中的 SESSDATA 字段。也可以通过 /bili_login 扫码登录自动获取。获取方法请查看 README。",
-    "default": "",
-    "invisible": true
+    "default": ""
   },
   "proxy": {
     "description": "代理地址",
