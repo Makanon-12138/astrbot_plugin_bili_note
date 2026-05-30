@@ -11,7 +11,7 @@ from astrbot.api import logger
 
 from ..downloaders.bilibili_downloader import BilibiliDownloader
 from ..transcriber.bcut import BcutTranscriber
-from ..gpt.prompt_builder import build_prompt
+from ..gpt.prompt_builder import build_prompt, build_review_prompt
 from ..utils.note_helper import replace_content_markers
 from ..utils.url_parser import extract_video_id
 
@@ -28,6 +28,9 @@ class NoteService:
         )
         self.transcriber = BcutTranscriber()
         self.cookies = cookies
+        self._last_segments = None
+        self._last_title = ""
+        self._last_url = ""
 
     async def generate_note(
         self,
@@ -38,6 +41,7 @@ class NoteService:
         quality: str = "fast",
         max_length: int = 3000,
         prefer_subtitle: bool = True,
+        max_input_chars: int = 0,
     ) -> Optional[str]:
         try:
             audio_meta = None
@@ -77,6 +81,11 @@ class NoteService:
 
             logger.info(f"获取到 {len(transcript.segments)} 段转写内容")
 
+            # 缓存供 generate_review 复用
+            self._last_segments = transcript.segments
+            self._last_title = title
+            self._last_url = video_url
+
             # 4. 构建 Prompt 并调用 LLM
             tags = ""
             title = ""
@@ -105,6 +114,7 @@ class NoteService:
                 tags=tags,
                 style=style,
                 enable_summary=enable_summary,
+                max_input_chars=max_input_chars,
             )
 
             logger.info("调用 LLM 生成总结...")
@@ -142,6 +152,18 @@ class NoteService:
                     self._cleanup(audio_meta.file_path)
             except Exception:
                 pass
+
+    async def generate_review(self, llm_ask_func, max_input_chars: int = 0) -> Optional[str]:
+        """基于缓存的转写内容生成观后感/评论（需先调用 generate_note）"""
+        if not self._last_segments:
+            return "暂无视频内容可评论"
+        prompt = build_review_prompt(
+            title=self._last_title,
+            segments=self._last_segments,
+            max_input_chars=max_input_chars,
+        )
+        logger.info("调用 LLM 生成观后感...")
+        return await llm_ask_func(prompt)
 
     @staticmethod
     def _format_error(exception: Exception) -> str:

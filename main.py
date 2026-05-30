@@ -447,7 +447,7 @@ class BiliNotePlugin(Star):
                     await event.send(MessageChain().message("请提供有效的B站视频链接或BV号"))
                     return
 
-        await event.send(MessageChain().message("正在生成视频总结，请稍候..."))
+        max_input = self.cfg.get("max_input_chars", 8000)
 
         try:
             note = await asyncio.wait_for(
@@ -459,19 +459,13 @@ class BiliNotePlugin(Star):
                     quality=self.cfg.get("download_quality", "fast"),
                     max_length=self.cfg.get("max_note_length", 3000),
                     prefer_subtitle=self.cfg.get("prefer_subtitle", True),
+                    max_input_chars=max_input,
                 ),
                 timeout=self.cfg.get("processing_timeout", 300),
             )
 
-            if not note:
-                await event.send(MessageChain().message("总结生成失败，请稍后重试"))
-                return
-
-            if note.startswith("无法获取"):
-                await event.send(MessageChain().message(f"❌ {note}"))
-                return
-
-            note = note.replace("*", "").replace("#", "").replace("`", "")
+            if note and not note.startswith("无法获取"):
+                note = note.replace("*", "").replace("#", "").replace("`", "")
 
             if len(note) > 2000:
                 chunks = []
@@ -489,15 +483,33 @@ class BiliNotePlugin(Star):
                 for i, chunk in enumerate(chunks):
                     label = f"📝 视频总结 ({i + 1}/{len(chunks)})\n\n" if i > 0 else "📝 视频总结\n\n"
                     await event.send(MessageChain().message(label + chunk))
+            elif not note:
+                await event.send(MessageChain().message("总结生成失败，请稍后重试"))
             else:
-                await event.send(MessageChain().message(f"📝 视频总结\n\n{note}"))
+                await event.send(MessageChain().message(f"❌ {note}"))
 
         except asyncio.TimeoutError:
-            logger.error(f"总结超时 ({self.cfg.get('processing_timeout', 300)}s): {url}")
-            await event.send(MessageChain().message(f"总结生成超时，请尝试较短的视频"))
+            logger.error(f"总结超时: {url}")
+            await event.send(MessageChain().message("总结生成超时，请尝试较短的视频"))
         except Exception as e:
             logger.error(f"总结失败: {e}", exc_info=True)
             await event.send(MessageChain().message(f"总结生成失败: {str(e)[:200]}"))
+
+        # 观后感/评论
+        if self.cfg.get("enable_review", False):
+            try:
+                review = await self.note_service.generate_review(
+                    llm_ask_func=self._ask_llm,
+                    max_input_chars=max_input,
+                )
+                if review:
+                    if hasattr(review, "completion_text"):
+                        review = review.completion_text
+                    review_text = str(review).replace("*", "").replace("#", "").replace("`", "")
+                    if review_text.strip() and "暂无视频" not in review_text:
+                        await event.send(MessageChain().message(f"💬 观后感\n\n{review_text}"))
+            except Exception as e:
+                logger.error(f"生成观后感失败: {e}")
 
     # ==================== B站登录命令 ====================
 

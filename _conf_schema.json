@@ -114,12 +114,26 @@
     "hint": "单个视频总结生成的最大超时时间"
   },
   "max_note_length": {
-    "description": "总结最大字符数",
+    "description": "输出：总结最大字符数",
     "type": "int",
     "default": 3000,
     "min": 500,
     "max": 10000,
-    "hint": "总结最大字符数，超过将自动截断"
+    "hint": "LLM 生成的总结超过此长度时在输出端截断"
+  },
+  "max_input_chars": {
+    "description": "输入：发给LLM的字幕最大字符数",
+    "type": "int",
+    "default": 8000,
+    "min": 1000,
+    "max": 50000,
+    "hint": "字幕/转写文本超过此长度时截断后发送给LLM，防止长视频一次消耗过多token（0=不限制）"
+  },
+  "enable_review": {
+    "description": "附加：观后感/锐评",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后，在总结之外额外用机器人人设生成一段视频观后感/锐评，独立于总结。可以和总结同时开启。"
   },
   "output_image": {
     "description": "总结以图片形式发送",

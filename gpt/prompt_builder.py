@@ -1,4 +1,4 @@
-from .prompt import BASE_PROMPT, AI_SUM
+from .prompt import BASE_PROMPT, AI_SUM, REVIEW_PROMPT
 from ..models.transcriber_model import TranscriptSegment
 from typing import List, Optional
 
@@ -31,11 +31,33 @@ def format_time(seconds: float) -> str:
     return f"{m:02d}:{s:02d}"
 
 
-def build_segment_text(segments: List[TranscriptSegment]) -> str:
-    return "\n".join(
-        f"{format_time(seg.start)} - {seg.text.strip()}"
-        for seg in segments
-    )
+def build_segment_text(segments: List[TranscriptSegment], max_chars: int = 0) -> str:
+    """将分段转写构建成文本，支持字符数限制"""
+    if max_chars <= 0:
+        return "\n".join(
+            f"{format_time(seg.start)} - {seg.text.strip()}"
+            for seg in segments
+        )
+
+    lines = []
+    total = 0
+    truncation_note = None
+    for seg in segments:
+        line = f"{format_time(seg.start)} - {seg.text.strip()}"
+        if total + len(line) + 1 > max_chars and lines:
+            remaining = len(segments) - len(lines)
+            truncation_note = (
+                f"\n\n---\n[内容过长，已截断：省略中间 {remaining} 段，"
+                f"共约 {sum(len(s.text) for s in segments[len(lines):])} 字符]"
+            )
+            break
+        lines.append(line)
+        total += len(line) + 1
+
+    text = "\n".join(lines)
+    if truncation_note:
+        text += truncation_note
+    return text
 
 
 def build_prompt(
@@ -44,8 +66,9 @@ def build_prompt(
     tags: str = "",
     style: Optional[str] = None,
     enable_summary: bool = True,
+    max_input_chars: int = 0,
 ) -> str:
-    segment_text = build_segment_text(segments)
+    segment_text = build_segment_text(segments, max_chars=max_input_chars)
     prompt = BASE_PROMPT.format(
         video_title=title,
         segment_text=segment_text,
@@ -56,3 +79,13 @@ def build_prompt(
     if style and style in NOTE_STYLES:
         prompt += "\n" + NOTE_STYLES[style]
     return prompt
+
+
+def build_review_prompt(
+    title: str,
+    segments: List[TranscriptSegment],
+    max_input_chars: int = 0,
+) -> str:
+    max_chars = max_input_chars if max_input_chars > 0 else 4000
+    segment_text = build_segment_text(segments, max_chars=max_chars)
+    return REVIEW_PROMPT.format(video_title=title, segment_text=segment_text)
