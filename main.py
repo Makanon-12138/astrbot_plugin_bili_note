@@ -353,6 +353,7 @@ class BiliNotePlugin(Star):
 
         # === 获取视频信息 ===
         video_info = await get_video_info(bvid, cookies=self._get_bili_cookies())
+        logger.info(f"[AutoDetect] 视频信息获取结果: {'成功' if video_info else '失败'}")
 
         # === 发送视频信息卡片（可配置开关）===
         if self.cfg.get("detect_show_video_info", True):
@@ -448,6 +449,7 @@ class BiliNotePlugin(Star):
                     return
 
         max_input = self.cfg.get("max_input_chars", 8000)
+        logger.info(f"[Summary] 开始生成总结: {url}")
 
         try:
             note = await asyncio.wait_for(
