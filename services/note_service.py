@@ -81,12 +81,7 @@ class NoteService:
 
             logger.info(f"获取到 {len(transcript.segments)} 段转写内容")
 
-            # 缓存供 generate_review 复用
-            self._last_segments = transcript.segments
-            self._last_title = title
-            self._last_url = video_url
-
-            # 4. 构建 Prompt 并调用 LLM
+            # 4. 确定标题
             tags = ""
             title = ""
             if audio_meta:
@@ -97,6 +92,7 @@ class NoteService:
                     tags = raw_info["tags"]
                 title = audio_meta.title
             else:
+                title = "视频总结"
                 video_id = extract_video_id(video_url, "bilibili")
                 if video_id:
                     try:
@@ -106,7 +102,13 @@ class NoteService:
                             title = video_info.get("title", "")
                     except Exception as e:
                         logger.warning(f"获取视频标题失败: {e}")
-                        title = "视频总结"
+
+            # 缓存供 generate_review 复用
+            self._last_segments = transcript.segments
+            self._last_title = title
+            self._last_url = video_url
+
+            # 5. 构建 Prompt 并调用 LLM
 
             prompt = build_prompt(
                 title=title,

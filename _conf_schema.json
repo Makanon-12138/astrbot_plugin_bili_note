@@ -133,7 +133,15 @@
     "description": "附加：观后感/锐评",
     "type": "bool",
     "default": false,
-    "hint": "开启后，在总结之外额外用机器人人设生成一段视频观后感/锐评，独立于总结。可以和总结同时开启。"
+    "hint": "开启后额外生成一段观后感（使用AstrBot内置人设，通过 text_chat 接口调用，自动带上角色人格）。独立于总结，可同时开启。"
+  },
+  "max_review_length": {
+    "description": "输出：观后感最大字符数",
+    "type": "int",
+    "default": 500,
+    "min": 100,
+    "max": 2000,
+    "hint": "观后感超过此长度时在输出端截断"
   },
   "output_image": {
     "description": "总结以图片形式发送",

@@ -495,7 +495,7 @@ class BiliNotePlugin(Star):
             logger.error(f"总结失败: {e}", exc_info=True)
             await event.send(MessageChain().message(f"总结生成失败: {str(e)[:200]}"))
 
-        # 观后感/评论
+        # 观后感/锐评（使用 AstrBot 内置人设）
         if self.cfg.get("enable_review", False):
             try:
                 review = await self.note_service.generate_review(
@@ -507,7 +507,11 @@ class BiliNotePlugin(Star):
                         review = review.completion_text
                     review_text = str(review).replace("*", "").replace("#", "").replace("`", "")
                     if review_text.strip() and "暂无视频" not in review_text:
-                        await event.send(MessageChain().message(f"💬 观后感\n\n{review_text}"))
+                        max_rev = self.cfg.get("max_review_length", 500)
+                        if len(review_text) > max_rev:
+                            cut = review_text.rfind('\n', 0, max_rev)
+                            review_text = review_text[:cut if cut > max_rev // 2 else max_rev]
+                        await event.send(MessageChain().message(review_text))
             except Exception as e:
                 logger.error(f"生成观后感失败: {e}")
 
