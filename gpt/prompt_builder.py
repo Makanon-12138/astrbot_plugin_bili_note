@@ -98,7 +98,7 @@ def build_review_prompt(
 ) -> str:
     max_chars = max_input_chars if max_input_chars > 0 else 4000
     segment_text = build_segment_text(segments, max_chars=max_chars)
-    limit_text = f"控制在一段话以内，不超过 {max_output_chars} 字。" if max_output_chars > 0 else ""
+    limit_text = f"（随便说两句就行，不用太长）" if max_output_chars > 0 else ""
     return REVIEW_PROMPT.format(
         video_title=title,
         segment_text=segment_text,
