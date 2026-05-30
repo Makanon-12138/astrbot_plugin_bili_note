@@ -50,7 +50,7 @@
   "detect_auto_summary": {
     "description": "识别推送：自动生成总结",
     "type": "bool",
-    "hint": "识别到B站链接时，是否自动生成视频AI总结。关闭后识别到链接仅返回视频信息，需手动 /总结 触发。",
+    "hint": "识别到B站链接时，是否自动触发AI总结（开关1/2）。关闭则仅返回视频信息卡片，或需手动 /总结。",
     "default": true
   },
   "llm_provider": {
@@ -87,10 +87,10 @@
     "hint": "concise(简洁 — 仅核心要点) / detailed(详细 — 完整记录) / professional(专业 — 结构化分析)"
   },
   "enable_summary_block": {
-    "description": "启用AI总结块",
+    "description": "总结末尾：附加一段概括",
     "type": "bool",
     "default": true,
-    "hint": "是否在总结末尾加入AI生成的总结概述"
+    "hint": "在结构化总结的末尾，追加一段一两句话的简短概括（仅影响总结格式，不是独立的AI调用）"
   },
   "download_quality": {
     "description": "音频下载质量",

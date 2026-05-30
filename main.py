@@ -382,8 +382,10 @@ class BiliNotePlugin(Star):
                     pic_url = video_info.get('pic', '')
                     if pic_url:
                         chain.url_image(pic_url)
+                logger.info("[AutoDetect] 准备发送视频信息卡片...")
                 try:
                     await event.send(chain)
+                    logger.info("[AutoDetect] 视频信息卡片已发送")
                 except Exception as e:
                     logger.warning(f"发送视频信息失败: {e}")
             else:
