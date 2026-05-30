@@ -114,12 +114,12 @@
     "hint": "单个视频总结生成的最大超时时间"
   },
   "max_note_length": {
-    "description": "输出：总结最大字符数",
+    "description": "输出：总结目标字数",
     "type": "int",
     "default": 3000,
     "min": 500,
     "max": 10000,
-    "hint": "LLM 生成的总结超过此长度时在输出端截断"
+    "hint": "在 prompt 中要求 LLM 将总结控制在此字数内（非硬截断，LLM 会自行压缩精华）"
   },
   "max_input_chars": {
     "description": "输入：发给LLM的字幕最大字符数",
@@ -136,12 +136,12 @@
     "hint": "开启后额外生成一段观后感（使用AstrBot内置人设，通过 text_chat 接口调用，自动带上角色人格）。独立于总结，可同时开启。"
   },
   "max_review_length": {
-    "description": "输出：观后感最大字符数",
+    "description": "输出：观后感目标字数",
     "type": "int",
     "default": 500,
     "min": 100,
     "max": 2000,
-    "hint": "观后感超过此长度时在输出端截断"
+    "hint": "在 prompt 中要求 LLM 将观后感控制在此字数内（非硬截断）"
   },
   "output_image": {
     "description": "总结以图片形式发送",

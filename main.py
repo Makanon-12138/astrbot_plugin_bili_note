@@ -460,6 +460,7 @@ class BiliNotePlugin(Star):
                     max_length=self.cfg.get("max_note_length", 3000),
                     prefer_subtitle=self.cfg.get("prefer_subtitle", True),
                     max_input_chars=max_input,
+                    max_output_chars=self.cfg.get("max_note_length", 3000),
                 ),
                 timeout=self.cfg.get("processing_timeout", 300),
             )
@@ -501,6 +502,7 @@ class BiliNotePlugin(Star):
                 review = await self.note_service.generate_review(
                     llm_ask_func=self._ask_llm,
                     max_input_chars=max_input,
+                    max_output_chars=self.cfg.get("max_review_length", 500),
                 )
                 if review:
                     if hasattr(review, "completion_text"):

@@ -42,6 +42,7 @@ class NoteService:
         max_length: int = 3000,
         prefer_subtitle: bool = True,
         max_input_chars: int = 0,
+        max_output_chars: int = 0,
     ) -> Optional[str]:
         try:
             audio_meta = None
@@ -117,6 +118,7 @@ class NoteService:
                 style=style,
                 enable_summary=enable_summary,
                 max_input_chars=max_input_chars,
+                max_output_chars=max_output_chars,
             )
 
             logger.info("调用 LLM 生成总结...")
@@ -155,7 +157,8 @@ class NoteService:
             except Exception:
                 pass
 
-    async def generate_review(self, llm_ask_func, max_input_chars: int = 0) -> Optional[str]:
+    async def generate_review(self, llm_ask_func, max_input_chars: int = 0,
+                              max_output_chars: int = 0) -> Optional[str]:
         """基于缓存的转写内容生成观后感/评论（需先调用 generate_note）"""
         if not self._last_segments:
             return "暂无视频内容可评论"
@@ -163,6 +166,7 @@ class NoteService:
             title=self._last_title,
             segments=self._last_segments,
             max_input_chars=max_input_chars,
+            max_output_chars=max_output_chars,
         )
         logger.info("调用 LLM 生成观后感...")
         return await llm_ask_func(prompt)

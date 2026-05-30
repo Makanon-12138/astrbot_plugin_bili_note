@@ -60,6 +60,13 @@ def build_segment_text(segments: List[TranscriptSegment], max_chars: int = 0) ->
     return text
 
 
+def _build_output_limit(max_chars: int) -> str:
+    """生成输出字数限制的 prompt 指令"""
+    if max_chars <= 0:
+        return ""
+    return f"**重要：整个输出（含标题和所有章节）控制在 {max_chars} 字以内。** 优先保证核心观点完整，细节可择要压缩。"
+
+
 def build_prompt(
     title: str,
     segments: List[TranscriptSegment],
@@ -67,12 +74,14 @@ def build_prompt(
     style: Optional[str] = None,
     enable_summary: bool = True,
     max_input_chars: int = 0,
+    max_output_chars: int = 0,
 ) -> str:
     segment_text = build_segment_text(segments, max_chars=max_input_chars)
     prompt = BASE_PROMPT.format(
         video_title=title,
         segment_text=segment_text,
         tags=tags,
+        output_limit=_build_output_limit(max_output_chars),
     )
     if enable_summary:
         prompt += "\n" + AI_SUM
@@ -85,7 +94,13 @@ def build_review_prompt(
     title: str,
     segments: List[TranscriptSegment],
     max_input_chars: int = 0,
+    max_output_chars: int = 0,
 ) -> str:
     max_chars = max_input_chars if max_input_chars > 0 else 4000
     segment_text = build_segment_text(segments, max_chars=max_chars)
-    return REVIEW_PROMPT.format(video_title=title, segment_text=segment_text)
+    limit_text = f"控制在一段话以内，不超过 {max_output_chars} 字。" if max_output_chars > 0 else ""
+    return REVIEW_PROMPT.format(
+        video_title=title,
+        segment_text=segment_text,
+        output_limit=limit_text,
+    )
